@@ -56,16 +56,21 @@ def render_report(report: AuditReport):
     s, m = report.synthesis, report.meta
     st.subheader(s.project_title)
 
+    # st.metric truncates long values, so free-text fields are shown as wrapping text.
     c1, c2, c3, c4 = st.columns([3, 3, 2, 2])
-    c1.metric("Institution", s.institution_name)
-    c2.metric("Sector", s.sector)
+    with c1:
+        st.caption("Institution")
+        st.markdown(f"**{s.institution_name}**")
+    with c2:
+        st.caption("Sector")
+        st.markdown(f"**{s.sector}**")
     c3.metric("Indicators", f"{len(report.indicators)}", f"{report.verified_count} verified", delta_color="off")
     c4.metric("Processed in", f"{m.elapsed_s}s", f"{m.pages} pages", delta_color="off")
 
     stem = safe_filename(s.institution_name)
-    d1, d2, _ = st.columns([2, 2, 6])
-    d1.download_button("📥 Dossier (Markdown)", to_markdown(report), f"dossier_{stem}.md", "text/markdown", on_click="ignore")
-    d2.download_button("📥 Data (JSON)", to_json(report), f"audit_{stem}.json", "application/json", on_click="ignore")
+    d1, d2, _ = st.columns([3, 3, 4])
+    d1.download_button("📥 Dossier (Markdown)", to_markdown(report), f"dossier_{stem}.md", "text/markdown", on_click="ignore", width="stretch")
+    d2.download_button("📥 Data (JSON)", to_json(report), f"audit_{stem}.json", "application/json", on_click="ignore", width="stretch")
 
     for w in m.warnings:
         st.warning(w)
