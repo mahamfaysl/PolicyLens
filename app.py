@@ -51,25 +51,24 @@ st.markdown("""
 st.title("📑 PolicyLens: Institutional Evidence & Briefing Pipeline")
 st.caption("Automated audit extraction, benchmark verification, and strategic briefing generation for unstructured institutional reports.")
 
-# Sidebar Controls
-with st.sidebar:
-    st.header("Configuration")
-    env_api_key = os.getenv("GEMINI_API_KEY")
-    if env_api_key:
-        st.success("API Key detected from .env")
-        api_key = env_api_key
-    else:
-        api_key = st.text_input("Gemini API Key", type="password", help="Enter key or set GEMINI_API_KEY in .env")
+# Helper to automatically resolve API key from Secrets or .env
+def get_active_api_key():
+    if "GEMINI_API_KEY" in st.secrets:
+        return st.secrets["GEMINI_API_KEY"]
+    return os.getenv("GEMINI_API_KEY")
 
-    st.markdown("---")
-    st.subheader("Document Input")
+api_key = get_active_api_key()
+
+# Clean Sidebar: Document Input Only
+with st.sidebar:
+    st.header("Document Input")
     uploaded_file = st.file_uploader("Upload Institutional Report (PDF)", type=["pdf"])
     st.info("Supported: MDB Completion Reports, Policy Matrices, or Technical Assistance Briefs.")
 
 if uploaded_file:
     if st.sidebar.button("Run Evidence Extraction", type="primary"):
         if not api_key:
-            st.error("Missing Gemini API Key. Provide it in .env or via the sidebar.")
+            st.error("API Key not found. Please configure GEMINI_API_KEY in Streamlit Secrets or .env.")
         else:
             with st.spinner("Extracting text and synthesizing audit evidence..."):
                 try:
@@ -78,7 +77,7 @@ if uploaded_file:
                     
                     st.success("Analysis complete!")
                     
-                    # Top Full-Width Metric Banner (No ellipses, fully visible)
+                    # Top Full-Width Metric Banner
                     col1, col2, col3 = st.columns([4, 4, 2])
                     with col1:
                         st.markdown(f"""
@@ -110,7 +109,6 @@ if uploaded_file:
                     with left_col:
                         st.subheader("📊 Indicator Verification Matrix")
                         if audit_result.tracked_indicators:
-                            # Auto-wrapping Markdown format to avoid horizontal scrollbars
                             for idx, ind in enumerate(audit_result.tracked_indicators, 1):
                                 with st.expander(f"**Metric {idx}:** {ind.indicator_name}", expanded=True):
                                     st.markdown(f"**Baseline:** `{ind.baseline_value or 'Not specified'}`")
@@ -135,7 +133,6 @@ if uploaded_file:
                         </div>
                         """, unsafe_allow_html=True)
 
-                        # Quick download package
                         dossier_md = f"""# PolicyLens Dossier: {audit_result.institution_name}
 **Project:** {audit_result.project_title}
 **Sector:** {audit_result.sector}
@@ -159,4 +156,4 @@ if uploaded_file:
                 except Exception as e:
                     st.error(f"Error during analysis: {str(e)}")
 else:
-    st.info("👈 Upload an institutional report PDF in the sidebar to begin.")
+    st.info("Upload an institutional report PDF in the sidebar to begin.")
